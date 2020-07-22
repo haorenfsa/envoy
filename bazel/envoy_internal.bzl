@@ -108,6 +108,7 @@ def envoy_stdlib_deps():
         "@envoy//bazel:asan_build": ["@envoy//bazel:dynamic_stdlib"],
         "@envoy//bazel:msan_build": ["@envoy//bazel:dynamic_stdlib"],
         "@envoy//bazel:tsan_build": ["@envoy//bazel:dynamic_stdlib"],
+        "@envoy//bazel:dynamic_link_tests": ["@envoy//bazel:dynamic_stdlib"],
         "//conditions:default": ["@envoy//bazel:static_stdlib"],
     })
 
