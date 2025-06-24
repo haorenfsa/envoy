@@ -83,6 +83,8 @@ public:
   void acceptMetadataFromRouter(Http::MetadataMapPtr&& metadata_map_ptr);
 
   virtual void resetStream();
+  void logResetReason(Http::StreamResetReason reason,
+                      absl::string_view transport_failure_reason);
   void setupPerTryTimeout();
   void maybeEndDecode(bool end_stream);
   void onUpstreamHostSelected(Upstream::HostDescriptionConstSharedPtr host, bool pool_success);

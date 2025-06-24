@@ -1955,7 +1955,7 @@ void ConnectionManagerImpl::ActiveStream::onDecoderFilterAboveWriteBufferHighWat
 }
 
 void ConnectionManagerImpl::ActiveStream::onResetStream(StreamResetReason reset_reason,
-                                                        absl::string_view) {
+                                                        absl::string_view transport_failure_reason) {
   // NOTE: This function gets called in all of the following cases:
   //       1) We TX an app level reset
   //       2) The codec TX a codec level reset
@@ -1963,8 +1963,9 @@ void ConnectionManagerImpl::ActiveStream::onResetStream(StreamResetReason reset_
   //       4) The overload manager reset the stream
   //       If we need to differentiate we need to do it inside the codec. Can start with this.
   const absl::string_view encoder_details = response_encoder_->getStream().responseDetails();
-  ENVOY_STREAM_LOG(debug, "stream reset: reset reason: {}, response details: {}", *this,
+  ENVOY_STREAM_LOG(debug, "stream reset: reset reason: {}, transport reason: {}, response details: {}", *this,
                    Http::Utility::resetReasonToString(reset_reason),
+                   transport_failure_reason.empty() ? absl::string_view{"-"} : transport_failure_reason,
                    encoder_details.empty() ? absl::string_view{"-"} : encoder_details);
   connection_manager_.stats_.named_.downstream_rq_rx_reset_.inc();
   state_.on_reset_stream_called_ = true;

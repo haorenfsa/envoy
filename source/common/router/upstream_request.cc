@@ -449,6 +449,13 @@ void UpstreamRequest::acceptMetadataFromRouter(Http::MetadataMapPtr&& metadata_m
   filter_manager_->decodeMetadata(*metadata_map_ptr);
 }
 
+void UpstreamRequest::logResetReason(Http::StreamResetReason reason,
+                                    absl::string_view transport_failure_reason) {
+  ENVOY_STREAM_LOG(debug, "[shaoyue-test]upstream request reset: {}, transport failure reason: {}",
+                   *parent_.callbacks(), Http::Utility::resetReasonToString(reason),
+                   transport_failure_reason);
+}
+
 void UpstreamRequest::onResetStream(Http::StreamResetReason reason,
                                     absl::string_view transport_failure_reason) {
   ScopeTrackerScopeState scope(&parent_.callbacks()->scope(), parent_.callbacks()->dispatcher());
@@ -484,6 +491,7 @@ void UpstreamRequest::resetStream() {
 
   if (upstream_) {
     ENVOY_STREAM_LOG(debug, "resetting pool request", *parent_.callbacks());
+
     upstream_->resetStream();
     clearRequestEncoder();
   }
@@ -798,6 +806,7 @@ void UpstreamRequestFilterManagerCallbacks::resetStream(
   } else {
     is_codec_error = transport_failure_reason == "codec_error";
   }
+  upstream_request_.logResetReason(reset_reason, transport_failure_reason);
   if (reset_reason == Http::StreamResetReason::LocalReset && !is_codec_error) {
     upstream_request_.parent_.callbacks()->resetStream();
     return;
