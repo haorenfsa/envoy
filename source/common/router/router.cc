@@ -1397,6 +1397,20 @@ void Filter::onUpstreamReset(Http::StreamResetReason reset_reason,
 
   const bool dropped = reset_reason == Http::StreamResetReason::Overflow;
 
+  // Special handling for the case where upstream has completed sending response
+  // but downstream is still receiving data. This commonly happens when downstream
+  // has limited bandwidth and upstream sends RST_STREAM to clean up the connection
+  // after completing the response. In this case, we should continue forwarding
+  // the remaining response to downstream instead of resetting the downstream.
+  if (downstream_response_started_ && upstream_response_complete_) {
+    ENVOY_STREAM_LOG(debug, 
+                     "Upstream reset after complete response (reason: {}), continuing downstream forwarding",
+                     *callbacks_, Http::Utility::resetReasonToString(reset_reason));
+    auto request_ptr = upstream_request.removeFromList(upstream_requests_);
+    callbacks_->dispatcher().deferredDelete(std::move(request_ptr));
+    return;
+  }
+
   // Ignore upstream reset caused by a resource overflow.
   // Currently, circuit breakers can only produce this reset reason.
   // It means that this reason is cluster-wise, not upstream-related.
@@ -1773,6 +1787,7 @@ void Filter::onUpstreamComplete(UpstreamRequest& upstream_request) {
     }
     upstream_request.resetStream();
   }
+  upstream_response_complete_ = true;
   Event::Dispatcher& dispatcher = callbacks_->dispatcher();
   std::chrono::milliseconds response_time = std::chrono::duration_cast<std::chrono::milliseconds>(
       dispatcher.timeSource().monotonicTime() - downstream_request_complete_time_);

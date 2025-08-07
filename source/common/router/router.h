@@ -317,7 +317,8 @@ public:
                                                "envoy.reloadable_features.streaming_shadow")),
         allow_multiplexed_upstream_half_close_(Runtime::runtimeFeatureEnabled(
             "envoy.reloadable_features.allow_multiplexed_upstream_half_close")),
-        upstream_request_started_(false), orca_load_report_received_(false) {}
+        upstream_request_started_(false), orca_load_report_received_(false),
+        upstream_response_complete_(false) {}
 
   ~Filter() override;
 
@@ -635,6 +636,8 @@ private:
   // Indicate that ORCA report is received to process it only once in either response headers or
   // trailers.
   bool orca_load_report_received_ : 1;
+  // Indicate that upstream has completed sending response (headers/data/trailers with end_stream=true)
+  bool upstream_response_complete_ : 1;
 };
 
 class ProdFilter : public Filter {
